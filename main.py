@@ -7,9 +7,10 @@ from typing import Optional, Dict, Tuple
 import openml
 from ucimlrepo import fetch_ucirepo
 
-from sklearn.experimental import enable_iterative_imputer  # noqa
-from sklearn.impute import IterativeImputer
-from sklearn.linear_model import BayesianRidge, LogisticRegression, Ridge
+import cudf
+from cuml.experimental.preprocessing import IterativeImputer
+from cuml.linear_model import BayesianRidge
+from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import LabelEncoder, StandardScaler
@@ -63,15 +64,17 @@ def clean_dataset(df, drop_duplicates=True, missing_tokens=None):
 
 
 def run_mice_imputation(X, random_state=42, max_iter=3):
+    X_gpu = cudf.DataFrame.from_pandas(X)
     imputer = IterativeImputer(
         estimator=BayesianRidge(),
         max_iter=max_iter,
         random_state=random_state,
-        sample_posterior=True,
         skip_complete=True
     )
-    X_imp = imputer.fit_transform(X)
-    return pd.DataFrame(X_imp, columns=X.columns, index=X.index)
+    X_imp = imputer.fit_transform(X_gpu).to_pandas()
+    X_imp.columns = X.columns
+    X_imp.index = X.index
+    return X_imp
 
 
 # -----------------------------
