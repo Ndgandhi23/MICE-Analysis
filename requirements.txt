@@ -3,3 +3,6 @@ numpy
 scikit-learn
 openml
 ucimlrepo
+--extra-index-url https://pypi.nvidia.com
+cuml-cu12
+cudf-cu12
